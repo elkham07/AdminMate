@@ -30,6 +30,8 @@ def save_data(filename, data):
 
 
 xp_data = load_data('xp.json')
+digest_messages = {}
+new_members = {}
  
 def get_level(xp):
     return int(xp ** 0.5) // 10
@@ -78,6 +80,11 @@ async def on_message(message):
 async def on_member_join(member):
     channel = discord.utils.get(member.guild.text_channels, name='общий')
     if channel:
+        guild_id = str(member.guild.id)
+        if guild_id not in new_members:
+            new_members[guild_id] = []
+        new_members[guild_id].append({'name': member.display_name})
+        
         embed = discord.Embed(
             title=f"What's up, {member.name}!",
             description=f"You have become  **{member.guild.member_count}-м** member of the server!\nCheck the rules and introduce yourself in the chat.",
@@ -144,35 +151,64 @@ async def level(ctx, member: discord.Member = None):
     await ctx.send(embed=embed)
 
 
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def digest(ctx):
-    guild_id = str(ctx.guild.id)
+async def send_digest(guild):
+    guild_id = str(guild.id)
     messages = digest_messages.get(guild_id, [])
- 
-    if not messages:
-        await ctx.send("No data available for the digest.")
+    members_joined = new_members.get(guild_id, [])
+
+    channel = discord.utils.get(guild.text_channels, name='general') or guild.text_channels[0]
+    if not channel:
         return
- 
-    total = len(messages)
-    channels = {}
+
+    top_messages = sorted(messages, key=lambda x: x.get('reactions', 0) if isinstance(x, dict) and 'reactions' in x else 0, reverse=True)[:3]
+
+    channel_counts = {}
     for msg in messages:
-        ch = msg['channel']
-        channels[ch] = channels.get(ch, 0) + 1
- 
-    top_channel = max(channels, key=channels.get) if channels else "no data"
- 
+        if isinstance(msg, dict) and 'channel' in msg:
+            ch = msg['channel']
+            channel_counts[ch] = channel_counts.get(ch, 0) + 1
+    top_channel = max(channel_counts, key=channel_counts.get) if channel_counts else "none"
+
+    user_counts = {}
+    for msg in messages:
+        if isinstance(msg, dict) and 'author' in msg:
+            u = msg['author']
+            user_counts[u] = user_counts.get(u, 0) + 1
+    top_user = max(user_counts, key=user_counts.get) if user_counts else "none"
+
     embed = discord.Embed(
-        title="Weekly Server Digest",
-        description="Activity summary for the recent period",
+        title=" Weekly Server Digest",
+        description=f"Here's what happened on **{guild.name}** this week!",
         color=0x5865F2,
         timestamp=datetime.utcnow()
     )
-    embed.add_field(name="Total messages", value=str(total), inline=True)
-    embed.add_field(name="Most active channel", value=f"#{top_channel}", inline=True)
-    embed.add_field(name="Server members", value=str(ctx.guild.member_count), inline=True)
-    embed.set_footer(text="AdminMate • Digest")
-    await ctx.send(embed=embed)
+    embed.add_field(name=" Total messages", value=str(len(messages)), inline=True)
+    embed.add_field(name=" Most active channel", value=f"#{top_channel}", inline=True)
+    embed.add_field(name=" Most active member", value=top_user, inline=True)
+    embed.add_field(name=" New members", value=str(len(members_joined)), inline=True)
+    embed.add_field(name=" Total members", value=str(guild.member_count), inline=True)
+
+    if members_joined:
+        names = ", ".join([m['name'] for m in members_joined[-5:]])
+        embed.add_field(name=" New arrivals", value=names, inline=False)
+
+    embed.set_footer(text="AdminMate • Auto Digest — every Sunday")
+    await channel.send(embed=embed)
+
+    digest_messages[guild_id] = []
+    new_members[guild_id] = []
+
+@tasks.loop(hours=1)
+async def weekly_digest_task():
+    now = datetime.utcnow()
+    if now.weekday() == 6 and now.hour == 9:
+        for guild in bot.guilds:
+            await send_digest(guild)
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def digest(ctx):
+    await send_digest(ctx.guild)
  
  
 @bot.command()
@@ -204,6 +240,7 @@ async def close(ctx):
  
 @bot.event
 async def on_ready():
+    weekly_digest_task.start()
     print(f'Bot {bot.user} is online and ready!')
     await bot.change_presence(activity=discord.Activity(
         type=discord.ActivityType.watching,
