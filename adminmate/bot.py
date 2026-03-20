@@ -6,4 +6,13 @@ import json
 from datetime import datetime, timedelta
 import asyncio
  
+load_dotenv()
+TOKEN = os.getenv('DISCORD_TOKEN')
  
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+intents.presences = True
+ 
+bot = commands.Bot(command_prefix='!', intents=intents)
+
