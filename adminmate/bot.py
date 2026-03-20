@@ -174,3 +174,30 @@ async def digest(ctx):
     await ctx.send(embed=embed)
  
  
+@bot.command()
+async def ticket(ctx, *, problem="No problem specified"):
+    guild = ctx.guild
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        ctx.author: discord.PermissionOverwrite(read_messages=True),
+    }
+    channel = await guild.create_text_channel(
+        f'ticket-{ctx.author.name}',
+        overwrites=overwrites
+    )
+    embed = discord.Embed(
+        title="New Ticket",
+        description=f"**User:** {ctx.author.mention}\n**Problem:** {problem}",
+        color=0x5865F2
+    )
+    embed.set_footer(text="Type !close to close the ticket")
+    await channel.send(embed=embed)
+    await ctx.send(f"Ticket created: {channel.mention}")
+ 
+@bot.command()
+async def close(ctx):
+    if 'ticket' in ctx.channel.name:
+        await ctx.send("Ticket closing in 5 seconds...")
+        await asyncio.sleep(5)
+        await ctx.channel.delete()
+ 
