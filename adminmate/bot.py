@@ -66,13 +66,24 @@ async def on_message(message):
    
     if new_level > old_level:
         await message.channel.send(
-            f"🎉 {message.author.mention} reached the level **{new_level}**!"
+            f" {message.author.mention} reached the level **{new_level}**!"
         )
  
     await bot.process_commands(message)
  
         
         
+@bot.event
+async def on_member_join(member):
+    channel = discord.utils.get(member.guild.text_channels, name='общий')
+    if channel:
+        embed = discord.Embed(
+            title=f"What's up, {member.name}!",
+            description=f"You have become  **{member.guild.member_count}-м** member of the server!\nCheck the rules and introduce yourself in the chat.",
+            color=0x5865F2
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        await channel.send(embed=embed)
     
         
 
