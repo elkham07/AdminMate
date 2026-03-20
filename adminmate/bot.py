@@ -87,3 +87,40 @@ async def on_member_join(member):
     
         
 
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member, *, reason="No reason provided"):
+    await member.ban(reason=reason)
+    await ctx.send(f"{member.name} has been banned. Reason: {reason}")
+ 
+@bot.command()
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member: discord.Member, *, reason="No reason provided"):
+    await member.kick(reason=reason)
+    await ctx.send(f"{member.name} has been kicked. Reason: {reason}")
+ 
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def clear(ctx, amount: int = 10):
+    await ctx.channel.purge(limit=amount + 1)
+    await ctx.send(f"Deleted {amount} messages.", delete_after=3)
+ 
+@bot.command()
+async def warn(ctx, member: discord.Member, *, reason="No reason provided"):
+    warns = load_data('warns.json')
+    user_id = str(member.id)
+    if user_id not in warns:
+        warns[user_id] = []
+    warns[user_id].append({
+        'reason': reason,
+        'date': str(datetime.utcnow()),
+        'by': str(ctx.author)
+    })
+    save_data('warns.json', warns)
+    count = len(warns[user_id])
+    await ctx.send(f"⚠️ {member.mention} received a warning ({count}/3). Reason: {reason}")
+ 
+    if count >= 3:
+        await member.kick(reason="3 warnings")
+        await ctx.send(f"👢 {member.name} was kicked for receiving 3 warnings.")
+ 
