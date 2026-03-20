@@ -26,3 +26,31 @@ def save_data(filename, data):
     with open(filename, 'w') as f:
         json.dump(data, f, indent=2)
 
+
+
+xp_data = load_data('xp.json')
+ 
+def get_level(xp):
+    return int(xp ** 0.5) // 10
+ 
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+ 
+    # Антиспам — удаляем ссылки от новых участников
+    user_id = str(message.author.id)
+    member = message.guild.get_member(message.author.id)
+    days_on_server = (datetime.utcnow() - member.joined_at.replace(tzinfo=None)).days
+ 
+    if days_on_server < 7:
+        bad_words = ['http://', 'https://', 'discord.gg']
+        if any(word in message.content.lower() for word in bad_words):
+            await message.delete()
+            await message.channel.send(
+                f"⚠️ {message.author.mention}, New members cannot be sent links for the first 7 days.",
+                delete_after=5
+            )
+            return
+        
+
