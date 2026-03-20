@@ -182,11 +182,11 @@ async def send_digest(guild):
         color=0x5865F2,
         timestamp=datetime.utcnow()
     )
-    embed.add_field(name=" Total messages", value=str(len(messages)), inline=True)
-    embed.add_field(name=" Most active channel", value=f"#{top_channel}", inline=True)
-    embed.add_field(name=" Most active member", value=top_user, inline=True)
-    embed.add_field(name=" New members", value=str(len(members_joined)), inline=True)
-    embed.add_field(name=" Total members", value=str(guild.member_count), inline=True)
+    embed.add_field(name="💬 Total messages", value=str(len(messages)), inline=True)
+    embed.add_field(name="🏆 Most active channel", value=f"#{top_channel}", inline=True)
+    embed.add_field(name="⭐ Most active member", value=top_user, inline=True)
+    embed.add_field(name="👥 New members", value=str(len(members_joined)), inline=True)
+    embed.add_field(name="🌍 Total members", value=str(guild.member_count), inline=True)
 
     if members_joined:
         names = ", ".join([m['name'] for m in members_joined[-5:]])
