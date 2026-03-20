@@ -156,7 +156,7 @@ async def send_digest(guild):
     messages = digest_messages.get(guild_id, [])
     members_joined = new_members.get(guild_id, [])
 
-    channel = discord.utils.get(guild.text_channels, name='general') or guild.text_channels[0]
+    channel = discord.utils.get(guild.text_channels, name='basic') or guild.text_channels[0]
     if not channel:
         return
 
@@ -240,7 +240,7 @@ async def close(ctx):
  
 @bot.event
 async def on_ready():
-    
+
     print(f'Bot {bot.user} is online and ready!')
     if not weekly_digest_task.is_running():
         weekly_digest_task.start()
