@@ -201,3 +201,13 @@ async def close(ctx):
         await asyncio.sleep(5)
         await ctx.channel.delete()
  
+@bot.event
+async def on_ready():
+    print(f'Bot {bot.user} is online and ready!')
+    await bot.change_presence(activity=discord.Activity(
+        type=discord.ActivityType.watching,
+        name="over the server"
+    ))
+ 
+bot.run(TOKEN)
+ 
