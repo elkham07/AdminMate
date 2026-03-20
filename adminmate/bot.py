@@ -143,5 +143,34 @@ async def level(ctx, member: discord.Member = None):
     await ctx.send(embed=embed)
 
 
-
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def digest(ctx):
+    guild_id = str(ctx.guild.id)
+    messages = digest_messages.get(guild_id, [])
+ 
+    if not messages:
+        await ctx.send("No data available for the digest.")
+        return
+ 
+    total = len(messages)
+    channels = {}
+    for msg in messages:
+        ch = msg['channel']
+        channels[ch] = channels.get(ch, 0) + 1
+ 
+    top_channel = max(channels, key=channels.get) if channels else "no data"
+ 
+    embed = discord.Embed(
+        title="Weekly Server Digest",
+        description="Activity summary for the recent period",
+        color=0x5865F2,
+        timestamp=datetime.utcnow()
+    )
+    embed.add_field(name="Total messages", value=str(total), inline=True)
+    embed.add_field(name="Most active channel", value=f"#{top_channel}", inline=True)
+    embed.add_field(name="Server members", value=str(ctx.guild.member_count), inline=True)
+    embed.set_footer(text="AdminMate • Digest")
+    await ctx.send(embed=embed)
+ 
  
