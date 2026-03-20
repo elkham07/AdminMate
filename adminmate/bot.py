@@ -124,3 +124,24 @@ async def warn(ctx, member: discord.Member, *, reason="No reason provided"):
         await member.kick(reason="3 warnings")
         await ctx.send(f"👢 {member.name} was kicked for receiving 3 warnings.")
  
+
+@bot.command()
+async def level(ctx, member: discord.Member = None):
+    member = member or ctx.author
+    user_id = str(member.id)
+    if user_id not in xp_data:
+        await ctx.send(f"{member.name} has not earned any XP yet.")
+        return
+    xp = xp_data[user_id]['xp']
+    lvl = xp_data[user_id]['level']
+    embed = discord.Embed(
+        title=f"Level — {member.name}",
+        color=0x5865F2
+    )
+    embed.add_field(name="Level", value=str(lvl))
+    embed.add_field(name="XP", value=str(xp))
+    await ctx.send(embed=embed)
+
+
+
+ 
