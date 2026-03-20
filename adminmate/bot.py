@@ -38,7 +38,7 @@ async def on_message(message):
     if message.author.bot:
         return
  
-    # Антиспам — удаляем ссылки от новых участников
+   
     user_id = str(message.author.id)
     member = message.guild.get_member(message.author.id)
     days_on_server = (datetime.utcnow() - member.joined_at.replace(tzinfo=None)).days
@@ -52,5 +52,27 @@ async def on_message(message):
                 delete_after=5
             )
             return
+        
+         
+        if user_id not in xp_data:
+            xp_data[user_id] = {'xp': 0, 'level': 0}
+ 
+    old_level = xp_data[user_id]['level']
+    xp_data[user_id]['xp'] += 10
+    new_level = get_level(xp_data[user_id]['xp'])
+    xp_data[user_id]['level'] = new_level
+    save_data('xp.json', xp_data)
+ 
+   
+    if new_level > old_level:
+        await message.channel.send(
+            f"🎉 {message.author.mention} reached the level **{new_level}**!"
+        )
+ 
+    await bot.process_commands(message)
+ 
+        
+        
+    
         
 
