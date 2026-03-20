@@ -240,8 +240,10 @@ async def close(ctx):
  
 @bot.event
 async def on_ready():
-    weekly_digest_task.start()
+    
     print(f'Bot {bot.user} is online and ready!')
+    if not weekly_digest_task.is_running():
+        weekly_digest_task.start()
     await bot.change_presence(activity=discord.Activity(
         type=discord.ActivityType.watching,
         name="over the server"
