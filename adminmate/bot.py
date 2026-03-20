@@ -6,6 +6,8 @@ import json
 from datetime import datetime, timedelta
 import asyncio
 
+from webhook import set_bot, run_flask
+import threading
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -240,6 +242,8 @@ async def close(ctx):
  
 @bot.event
 async def on_ready():
+    set_bot(bot)
+    threading.Thread(target=run_flask, daemon=True).start()
 
     print(f'Bot {bot.user} is online and ready!')
     if not weekly_digest_task.is_running():
