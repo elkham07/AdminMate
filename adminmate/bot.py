@@ -78,9 +78,15 @@ async def on_message(message):
  
         
         
+class WelcomeView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(label="View Rules", style=discord.ButtonStyle.primary, custom_id="view_rules"))
+        self.add_item(discord.ui.Button(label="Get Roles", style=discord.ButtonStyle.secondary, custom_id="get_roles"))
+
 @bot.event
 async def on_member_join(member):
-    channel = discord.utils.get(member.guild.text_channels, name='общий')
+    channel = discord.utils.get(member.guild.text_channels, name='общий') or discord.utils.get(member.guild.text_channels, name='general')
     if channel:
         guild_id = str(member.guild.id)
         if guild_id not in new_members:
@@ -88,12 +94,15 @@ async def on_member_join(member):
         new_members[guild_id].append({'name': member.display_name})
         
         embed = discord.Embed(
-            title=f"What's up, {member.name}!",
-            description=f"You have become  **{member.guild.member_count}-м** member of the server!\nCheck the rules and introduce yourself in the chat.",
+            title="👋 Welcome to the server!",
+            description=f"Welcome {member.mention}! You are member **#{member.guild.member_count}**.\n\nPlease check out the rules and roles channels to get started.",
             color=0x5865F2
         )
-        embed.set_thumbnail(url=member.display_avatar.url)
-        await channel.send(embed=embed)
+        embed.set_thumbnail(url=member.display_avatar.url if member.display_avatar else None)
+        embed.add_field(name="📖 Rules", value="Read the rules", inline=True)
+        embed.add_field(name="🎭 Roles", value="Get your roles", inline=True)
+        embed.set_footer(text="AdminMate | 24/7 | v1.0")
+        await channel.send(embed=embed, view=WelcomeView())
     
         
 
@@ -148,8 +157,9 @@ async def level(ctx, member: discord.Member = None):
         title=f"Level — {member.name}",
         color=0x5865F2
     )
-    embed.add_field(name="Level", value=str(lvl))
-    embed.add_field(name="XP", value=str(xp))
+    embed.add_field(name="Level", value=str(lvl), inline=True)
+    embed.add_field(name="XP", value=str(xp), inline=True)
+    embed.set_footer(text="AdminMate | 24/7 | v1.0")
     await ctx.send(embed=embed)
 
 
@@ -179,22 +189,26 @@ async def send_digest(guild):
     top_user = max(user_counts, key=user_counts.get) if user_counts else "none"
 
     embed = discord.Embed(
-        title=" Weekly Server Digest",
+        title="📊 Weekly Server Digest",
         description=f"Here's what happened on **{guild.name}** this week!",
-        color=0x5865F2,
+        color=0x7B2FBE,
         timestamp=datetime.utcnow()
     )
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+
     embed.add_field(name="💬 Total messages", value=str(len(messages)), inline=True)
     embed.add_field(name="🏆 Most active channel", value=f"#{top_channel}", inline=True)
     embed.add_field(name="⭐ Most active member", value=top_user, inline=True)
     embed.add_field(name="👥 New members", value=str(len(members_joined)), inline=True)
     embed.add_field(name="🌍 Total members", value=str(guild.member_count), inline=True)
+    embed.add_field(name="\u200b", value="\u200b", inline=True)
 
     if members_joined:
         names = ", ".join([m['name'] for m in members_joined[-5:]])
-        embed.add_field(name=" New arrivals", value=names, inline=False)
+        embed.add_field(name="👋 New arrivals", value=names, inline=False)
 
-    embed.set_footer(text="AdminMate • Auto Digest — every Sunday")
+    embed.set_footer(text="AdminMate • v1.0 • Next digest: Sunday")
     await channel.send(embed=embed)
 
     digest_messages[guild_id] = []
@@ -225,11 +239,11 @@ async def ticket(ctx, *, problem="No problem specified"):
         overwrites=overwrites
     )
     embed = discord.Embed(
-        title="New Ticket",
+        title="🎫 New Ticket",
         description=f"**User:** {ctx.author.mention}\n**Problem:** {problem}",
         color=0x5865F2
     )
-    embed.set_footer(text="Type !close to close the ticket")
+    embed.set_footer(text="AdminMate | 24/7 | v1.0 • Type !close to close")
     await channel.send(embed=embed)
     await ctx.send(f"Ticket created: {channel.mention}")
  
@@ -248,9 +262,10 @@ async def on_ready():
     print(f'Bot {bot.user} is online and ready!')
     if not weekly_digest_task.is_running():
         weekly_digest_task.start()
+    server_count = len(bot.guilds)
     await bot.change_presence(activity=discord.Activity(
         type=discord.ActivityType.watching,
-        name="over the server"
+        name=f"over {server_count} servers"
     ))
  
 bot.run(TOKEN)
