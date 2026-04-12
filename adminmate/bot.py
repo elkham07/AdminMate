@@ -43,24 +43,37 @@ async def on_message(message):
     if message.author.bot:
         return
  
-   
+    # Если это личные сообщения, просто обрабатываем команды
+    if not message.guild:
+        await bot.process_commands(message)
+        return
+
     user_id = str(message.author.id)
-    member = message.guild.get_member(message.author.id)
-    days_on_server = (datetime.utcnow() - member.joined_at.replace(tzinfo=None)).days
+    # message.author уже является объектом Member, если мы на сервере
+    member = message.author 
+    
+    # Безопасная проверка количества дней на сервере
+    if member.joined_at:
+        days_on_server = (datetime.utcnow() - member.joined_at.replace(tzinfo=None)).days
+    else:
+        days_on_server = 0
  
     if days_on_server < 7:
         bad_words = ['http://', 'https://', 'discord.gg']
         if any(word in message.content.lower() for word in bad_words):
-            await message.delete()
-            await message.channel.send(
-                f"⚠️ {message.author.mention}, New members cannot be sent links for the first 7 days.",
-                delete_after=5
-            )
+            try:
+                await message.delete()
+                await message.channel.send(
+                    f"⚠️ {message.author.mention}, New members cannot send links for the first 7 days.",
+                    delete_after=5
+                )
+            except discord.Forbidden:
+                pass # У бота может не быть прав на удаление или отправку
             return
         
-         
-        if user_id not in xp_data:
-            xp_data[user_id] = {'xp': 0, 'level': 0}
+    # Инициализация пользователя должна быть вне блока 7 дней!
+    if user_id not in xp_data:
+        xp_data[user_id] = {'xp': 0, 'level': 0}
  
     old_level = xp_data[user_id]['level']
     xp_data[user_id]['xp'] += 10
@@ -68,15 +81,12 @@ async def on_message(message):
     xp_data[user_id]['level'] = new_level
     save_data('xp.json', xp_data)
  
-   
     if new_level > old_level:
         await message.channel.send(
-            f" {message.author.mention} reached the level **{new_level}**!"
+            f"🎉 {message.author.mention} reached the level **{new_level}**!"
         )
  
     await bot.process_commands(message)
- 
-        
         
 class WelcomeView(discord.ui.View):
     def __init__(self):
